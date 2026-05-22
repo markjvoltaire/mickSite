@@ -1,19 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePosts } from "@/context/PostsContext";
-import { getTopicById } from "@/lib/topics";
+import { TOPICS, getTopicById } from "@/lib/topics";
 import { MAX_POST_LENGTH } from "@/lib/types";
 
 export function ComposeForm() {
   const { selectedTopicId, addPost } = usePosts();
   const [body, setBody] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [composeTopicId, setComposeTopicId] = useState(TOPICS[0].id);
 
-  if (selectedTopicId === null) return null;
-
-  const topicId = selectedTopicId;
+  const isAllView = selectedTopicId === null;
+  const topicId = selectedTopicId ?? composeTopicId;
   const topic = getTopicById(topicId);
+
+  useEffect(() => {
+    if (selectedTopicId !== null) {
+      setComposeTopicId(selectedTopicId);
+    }
+  }, [selectedTopicId]);
+
   if (!topic) return null;
 
   const remaining = MAX_POST_LENGTH - body.length;
@@ -34,8 +41,27 @@ export function ComposeForm() {
     <section className="compose-panel" aria-labelledby="compose-heading">
       <div className="compose-header">
         <h2 id="compose-heading" className="compose-title">
-          Write on this thread
+          {isAllView ? "Write a post" : "Write on this thread"}
         </h2>
+        {isAllView ? (
+          <div className="compose-topic-field">
+            <label htmlFor="compose-topic" className="compose-topic-label">
+              Thread
+            </label>
+            <select
+              id="compose-topic"
+              className="compose-topic-select"
+              value={composeTopicId}
+              onChange={(e) => setComposeTopicId(e.target.value)}
+            >
+              {TOPICS.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.title}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
         <p className="compose-blurb">{topic.blurb}</p>
       </div>
       <form onSubmit={handleSubmit} className="compose-form">
